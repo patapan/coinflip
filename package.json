@@ -7,12 +7,12 @@
     "test": "mocha -r ts-node/register test/**/*.ts"
   },
   "dependencies": {
-    "@solana/web3.js": "^1.23.0",
-    "@project-serum/anchor": "^0.14.0",
-    "@types/mocha": "^8.2.2",
-    "mocha": "^8.3.2",
-    "ts-node": "^9.1.1"
-  },
+    "@solana/web3.js": "latest",
+    "@project-serum/anchor": "latest",
+    "@types/mocha": "latest",
+    "mocha": "latest",
+    "ts-node": "latest"
+  },  
   "devDependencies": {
     "typescript": "^4.2.4"
   },

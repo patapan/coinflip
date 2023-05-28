@@ -5,7 +5,7 @@ const { ProgramTest, BN, Provider, web3 } = require('@project-serum/anchor');
 describe('coin flip game', () => {
   // Configure the client to use the local cluster.
   const provider = Provider.env();
-  const programTest = new ProgramTest('coin_flip_game', '../path-to-your-program/');
+  const programTest = new ProgramTest('coin_flip_game', '../src/flip.rs/');
   let connection = null;
   let gameAccount = null;
   let userAccount = null;
