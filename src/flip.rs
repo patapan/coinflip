@@ -1,10 +1,16 @@
 use solana_program::{
-    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, pubkey::Pubkey, 
-    program_error::ProgramError, program_pack::Pack, sysvar::{Sysvar, clock::Clock}
+    account_info::{AccountInfo, next_account_info}, 
+    entrypoint, 
+    entrypoint::ProgramResult, 
+    msg, 
+    pubkey::Pubkey, 
+    program_error::ProgramError, 
+    program_pack::Pack, 
+    sysvar::{Sysvar, clock::Clock},
 };
 
 use spl_token::{
-    instruction::transfer, state::Account as TokenAccount, 
+    state::Account as TokenAccount,
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -18,7 +24,7 @@ pub struct GameData {
 }
 
 pub fn process_instruction(
-    program_id: &Pubkey,
+    _program_id: &Pubkey,
     accounts: &[AccountInfo],
     _instruction_data: &[u8],
 ) -> ProgramResult {
@@ -38,7 +44,7 @@ pub fn process_instruction(
     if coin_flip_result == 0 {
         msg!("Heads! You've won!");
         game_data.bet_amount = 0;
-        let user_token_account_data = TokenAccount::unpack(&user_account.data.borrow())?;
+        let mut user_token_account_data = TokenAccount::unpack(&mut user_account.data.borrow_mut())?;
         let new_balance = user_token_account_data.amount + 2 * game_data.bet_amount;
         user_token_account_data.amount = new_balance;
     } else {
@@ -48,4 +54,3 @@ pub fn process_instruction(
     game_data.serialize(&mut &mut game_account.data.borrow_mut()[..])?;
     Ok(())
 }
-
