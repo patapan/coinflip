@@ -9,9 +9,7 @@ use solana_program::{
     sysvar::{Sysvar, clock::Clock},
 };
 
-use spl_token::{
-    state::Account as TokenAccount,
-};
+use solana_sdk::account::Account;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
@@ -39,14 +37,13 @@ pub fn process_instruction(
     }
 
     let clock = Clock::get()?;
-    let coin_flip_result = (clock.unix_timestamp as u64) % 2;
+    let coin_process_instruction_result = (clock.unix_timestamp as u64) % 2;
 
-    if coin_flip_result == 0 {
+    if coin_process_instruction_result == 0 {
         msg!("Heads! You've won!");
         game_data.bet_amount = 0;
-        let mut user_token_account_data = TokenAccount::unpack(&mut user_account.data.borrow_mut())?;
-        let new_balance = user_token_account_data.amount + 2 * game_data.bet_amount;
-        user_token_account_data.amount = new_balance;
+        let new_balance = **user_account.lamports.borrow() + 2 * game_data.bet_amount;
+        **user_account.lamports.borrow_mut() = new_balance;
     } else {
         msg!("Tails! You've lost!");
         game_data.bet_amount = 0;

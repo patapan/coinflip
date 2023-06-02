@@ -1,30 +1,27 @@
+use borsh::BorshSerialize;
 use solana_program::{
-    account_info::{AccountInfo, next_account_info}, 
-    entrypoint, 
-    entrypoint::ProgramResult, 
-    msg, 
-    program_error::ProgramError, 
-    program_pack::Pack, 
-    sysvar::{Sysvar, clock::Clock},
+    account_info::AccountInfo, entrypoint::ProgramResult
 };
-use solana_program_test::{tokio, ProgramTest};
+use solana_program_test::{tokio, ProgramTest, InvokeContext};
 use solana_sdk::{
     account::Account,
     pubkey::Pubkey,
     signature::{Keypair, Signer},
+    system_instruction,
+    transaction::Transaction,
 };
 use coinflip::flip::process_instruction;
 use coinflip::flip::GameData;
-use spl_token::state::Account as TokenAccount;
+
 
 #[tokio::test]
 async fn test_flip() {
     // Create a program test environment.
     let program_id = Pubkey::new_unique();
-    let mut program_test = ProgramTest::new(
+    let program_test = ProgramTest::new(
         "flip", // Name of the program to be tested
         program_id, // program id
-        None, // processor
+        Some(process_instruction), // processor
     );
 
     // Setup
@@ -36,26 +33,25 @@ async fn test_flip() {
     let user_account_keypair = Keypair::new();
     let user_account_pubkey = user_account_keypair.pubkey();
 
-    // Fund the game account
-    let game_account_balance = banks_client
-        .get_balance(game_account_pubkey)
-        .await
-        .expect("get_balance");
-    banks_client
-        .transfer(
-            &payer,
-            &game_account_pubkey,
-            game_account_balance + 1_000_000,
-            recent_blockhash,
-        )
-        .await
-        .expect("transfer failed");
+    // Fund the game account with SOL
+    let transfer_amount = 1_000_000;  // Amount in lamports
+    let transfer_instruction = system_instruction::transfer(&payer.pubkey(), &game_account_pubkey, transfer_amount);
+    let mut transaction = Transaction::new_with_payer(&[transfer_instruction], Some(&payer.pubkey()));
+    transaction.sign(&[&payer], recent_blockhash);
+    banks_client.process_transaction(transaction).await.expect("transfer failed");
 
     // Create game data
     let game_data = GameData {
         is_initialized: true,
         bet_amount: 100,
     };
+
+    // Create AccountInfo structures for program processing
+    let mut game_account_lamports = 1_000_000;
+    let mut user_account_lamports = 1_000_000;
+
+    // Create user account data
+    let mut user_account_data = Account::new(user_account_lamports, 0, &program_id);
 
     // Invoke the program
     let result = process_instruction(
@@ -65,8 +61,8 @@ async fn test_flip() {
                 &game_account_pubkey,
                 true,
                 false,
+                &mut game_account_lamports,
                 &mut game_data.try_to_vec().unwrap(),
-                &mut Account::new(1_000_000, 0, &program_id),
                 &program_id,
                 false,
                 0,
@@ -75,8 +71,8 @@ async fn test_flip() {
                 &user_account_pubkey,
                 true,
                 false,
-                &mut TokenAccount::unpack(&[0; spl_token::state::Account::get_packed_len()]).unwrap().amount.to_le_bytes(),
-                &mut Account::new(1_000_000, 0, &program_id),
+                &mut user_account_lamports,
+                &mut user_account_data.data,
                 &program_id,
                 false,
                 0,
