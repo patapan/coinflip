@@ -1,8 +1,8 @@
 use borsh::BorshSerialize;
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult
+    account_info::AccountInfo
 };
-use solana_program_test::{tokio, ProgramTest, InvokeContext};
+use solana_program_test::{tokio, ProgramTest};
 use solana_sdk::{
     account::Account,
     pubkey::Pubkey,
@@ -19,9 +19,9 @@ async fn test_flip() {
     // Create a program test environment.
     let program_id = Pubkey::new_unique();
     let program_test = ProgramTest::new(
-        "flip", // Name of the program to be tested
+        "coinflip", // Name of the program to be tested
         program_id, // program id
-        Some(process_instruction), // processor
+        None
     );
 
     // Setup

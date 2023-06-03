@@ -5,11 +5,8 @@ use solana_program::{
     msg, 
     pubkey::Pubkey, 
     program_error::ProgramError, 
-    program_pack::Pack, 
     sysvar::{Sysvar, clock::Clock},
 };
-
-use solana_sdk::account::Account;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
