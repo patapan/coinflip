@@ -72,9 +72,9 @@ async fn test_flip() {
     banks_client.process_transaction(transaction).await.unwrap();
 
     // Check that the balance of the user account increased by the bet amount
-    let expected_user_balance_pos = initial_user_balance + 2 * game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
+    let expected_user_balance_pos = initial_user_balance + game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
     // Check that the balance of the user account increased by the bet amount
-    let expected_user_balance_neg = initial_user_balance - 2 * game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
+    let expected_user_balance_neg = initial_user_balance - game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
     
 
     let user_balance = banks_client.get_balance(user_account_pubkey).await.expect("Error retrieving user balance");
