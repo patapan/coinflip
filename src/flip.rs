@@ -21,18 +21,24 @@ pub struct GameData {
 pub fn process_instruction(
     _program_id: &Pubkey,
     accounts: &[AccountInfo],
-    _instruction_data: &[u8],
+    instruction_data: &[u8],
 ) -> ProgramResult {
+
     let accounts_iter = &mut accounts.iter();
     let game_account = next_account_info(accounts_iter)?;
     let user_account = next_account_info(accounts_iter)?;
+    
+    msg!("Got here!!!");
 
-    let mut game_data = GameData::try_from_slice(&game_account.data.borrow())?;
+    let mut game_data = GameData::try_from_slice(&instruction_data)?;
+
+    msg!("Got here!!!2");
 
     if !game_data.is_initialized {
         return Err(ProgramError::UninitializedAccount);
     }
 
+    msg!("Got here!!!3");
     let clock = Clock::get()?;
     let coin_process_instruction_result = (clock.unix_timestamp as u64) % 2;
 
@@ -45,6 +51,6 @@ pub fn process_instruction(
         msg!("Tails! You've lost!");
         game_data.bet_amount = 0;
     }
-    game_data.serialize(&mut &mut game_account.data.borrow_mut()[..])?;
+    // game_data.serialize(&mut &mut game_account.data.borrow_mut()[..])?;
     Ok(())
 }

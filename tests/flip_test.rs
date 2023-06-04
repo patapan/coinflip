@@ -1,6 +1,7 @@
 use borsh::BorshSerialize;
 use solana_program::{
-    account_info::AccountInfo
+    account_info::AccountInfo,
+    instruction::{AccountMeta, Instruction}
 };
 use solana_program_test::{tokio, ProgramTest};
 use solana_sdk::{
@@ -46,40 +47,21 @@ async fn test_flip() {
         bet_amount: 100,
     };
 
-    // Create AccountInfo structures for program processing
-    let mut game_account_lamports = 1_000_000;
-    let mut user_account_lamports = 1_000_000;
-
-    // Create user account data
-    let mut user_account_data = Account::new(user_account_lamports, 0, &program_id);
-
-    // Invoke the program
-    let result = process_instruction(
-        &program_id,
-        &[
-            AccountInfo::new(
-                &game_account_pubkey,
-                true,
-                false,
-                &mut game_account_lamports,
-                &mut game_data.try_to_vec().unwrap(),
-                &program_id,
-                false,
-                0,
-            ),
-            AccountInfo::new(
-                &user_account_pubkey,
-                true,
-                false,
-                &mut user_account_lamports,
-                &mut user_account_data.data,
-                &program_id,
-                false,
-                0,
-            ),
+    // Prepare the instruction for the program
+    let instruction = Instruction {
+        program_id,
+        accounts: vec![
+            AccountMeta::new(game_account_pubkey, true),
+            AccountMeta::new(user_account_pubkey, true),
         ],
-        &[],
-    );
+        data: game_data.try_to_vec().unwrap(),  // serialize your instruction data
+    };
 
-    assert!(result.is_ok());
+    // Sign and execute the transaction
+    let mut transaction = Transaction::new_with_payer(&[instruction], Some(&payer.pubkey()));
+    transaction.sign(&[&payer, &game_account_keypair, &user_account_keypair], recent_blockhash);
+    banks_client.process_transaction(transaction).await.unwrap();
+
+    // Add your assertion here
+
 }
