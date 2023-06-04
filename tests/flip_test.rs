@@ -1,6 +1,6 @@
 use borsh::BorshSerialize;
 use solana_program::{
-    account_info::AccountInfo,
+    account_info::AccountInfo, msg,
     instruction::{AccountMeta, Instruction}
 };
 use solana_program_test::{tokio, ProgramTest};
@@ -34,6 +34,14 @@ async fn test_flip() {
     let user_account_keypair = Keypair::new();
     let user_account_pubkey = user_account_keypair.pubkey();
 
+    // Fund the user's account
+    let initial_user_balance = 1_000_000;  // Amount in lamports
+    let transfer_instruction = system_instruction::transfer(&payer.pubkey(), &user_account_pubkey, initial_user_balance);
+    let mut transaction = Transaction::new_with_payer(&[transfer_instruction], Some(&payer.pubkey()));
+    transaction.sign(&[&payer], recent_blockhash);
+    banks_client.process_transaction(transaction).await.expect("transfer failed");
+
+
     // Fund the game account with SOL
     let transfer_amount = 1_000_000;  // Amount in lamports
     let transfer_instruction = system_instruction::transfer(&payer.pubkey(), &game_account_pubkey, transfer_amount);
@@ -53,6 +61,7 @@ async fn test_flip() {
         accounts: vec![
             AccountMeta::new(game_account_pubkey, true),
             AccountMeta::new(user_account_pubkey, true),
+            AccountMeta::new_readonly(solana_program::system_program::ID, false),
         ],
         data: game_data.try_to_vec().unwrap(),  // serialize your instruction data
     };
@@ -62,6 +71,15 @@ async fn test_flip() {
     transaction.sign(&[&payer, &game_account_keypair, &user_account_keypair], recent_blockhash);
     banks_client.process_transaction(transaction).await.unwrap();
 
-    // Add your assertion here
+    // Check that the balance of the user account increased by the bet amount
+    let expected_user_balance_pos = initial_user_balance + 2 * game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
+    // Check that the balance of the user account increased by the bet amount
+    let expected_user_balance_neg = initial_user_balance - 2 * game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
+    
+
+    let user_balance = banks_client.get_balance(user_account_pubkey).await.expect("Error retrieving user balance");
+    println!("user balance: {}", user_balance);
+    assert!((user_balance == expected_user_balance_pos) || (user_balance == expected_user_balance_neg)) ;
+
 
 }
