@@ -1,17 +1,15 @@
 use borsh::BorshSerialize;
 use solana_program::{
-    account_info::AccountInfo, msg,
     instruction::{AccountMeta, Instruction}
 };
 use solana_program_test::{tokio, ProgramTest};
 use solana_sdk::{
-    account::Account,
     pubkey::Pubkey,
     signature::{Keypair, Signer},
     system_instruction,
     transaction::Transaction,
 };
-use coinflip::flip::process_instruction;
+
 use coinflip::flip::GameData;
 
 
