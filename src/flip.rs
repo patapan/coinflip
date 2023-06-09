@@ -6,7 +6,7 @@ use solana_program::{
     pubkey::Pubkey, 
     program_error::ProgramError, 
     sysvar::{Sysvar, clock::Clock},
-    system_instruction::transfer,
+    system_instruction,
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -38,12 +38,18 @@ pub fn process_instruction(
     let clock = Clock::get()?;
     let game_result = (clock.unix_timestamp as u64) % 2;
 
+    // win amount
+    let bet_amount_float = game_data.bet_amount as f64; // Convert to f64
+    let result = bet_amount_float * 0.95; // Now you can do the multiplication
+    let winnings = result.round() as u64; 
+
     // Create a `transfer` instruction
     let transfer_instruction = if game_result == 0 {
-        transfer(game_account.key, user_account.key, game_data.bet_amount)
+        system_instruction::transfer(game_account.key, user_account.key, winnings)
     } else {
-        transfer(user_account.key, game_account.key, game_data.bet_amount)
+        system_instruction::transfer(user_account.key, game_account.key, game_data.bet_amount)
     };
+    
     
     // Perform a CPI to the System Program
     solana_program::program::invoke(

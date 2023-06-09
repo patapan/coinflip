@@ -43,8 +43,8 @@ async fn test_flip() {
 
 
     // Fund the game account with SOL
-    let transfer_amount = 1_000_000;  // Amount in lamports
-    let transfer_instruction = system_instruction::transfer(&payer.pubkey(), &game_account_pubkey, transfer_amount);
+    let initial_game_balance = 1_000_000;  // Amount in lamports
+    let transfer_instruction = system_instruction::transfer(&payer.pubkey(), &game_account_pubkey, initial_game_balance);
     let mut transaction = Transaction::new_with_payer(&[transfer_instruction], Some(&payer.pubkey()));
     transaction.sign(&[&payer], recent_blockhash);
     banks_client.process_transaction(transaction).await.expect("transfer failed");
@@ -70,16 +70,25 @@ async fn test_flip() {
     let mut transaction = Transaction::new_with_payer(&[instruction], Some(&payer.pubkey()));
     transaction.sign(&[&payer, &game_account_keypair, &user_account_keypair], recent_blockhash);
     banks_client.process_transaction(transaction).await.unwrap();
+    
+    // calculate profit from win
+    let bet_amount_float = game_data.bet_amount as f64; // Convert to f64
+    let result = bet_amount_float * 0.95; // 5% fee to site
+    let winnings = result.round() as u64; 
 
     // Check that the balance of the user account increased by the bet amount
-    let expected_user_balance_pos = initial_user_balance + game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
+    let expected_user_balance_pos = initial_user_balance + winnings;  // Assuming `bet_amount` is in lamports
     // Check that the balance of the user account increased by the bet amount
     let expected_user_balance_neg = initial_user_balance - game_data.bet_amount as u64;  // Assuming `bet_amount` is in lamports
     
-
+    // Assert user balance
     let user_balance = banks_client.get_balance(user_account_pubkey).await.expect("Error retrieving user balance");
     println!("user balance: {}", user_balance);
     assert!((user_balance == expected_user_balance_pos) || (user_balance == expected_user_balance_neg)) ;
 
-
+    // Assert game account balance
+    let game_balance = banks_client.get_balance(game_account_pubkey).await.expect("Error retrieving game balance");
+    println!("game balance: {}", game_balance);
+    assert!((game_balance == initial_game_balance - winnings) || (game_balance == initial_game_balance + game_data.bet_amount)) ;
+    
 }
